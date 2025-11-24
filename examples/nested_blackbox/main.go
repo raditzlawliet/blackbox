@@ -29,7 +29,7 @@ func main() {
 	// Level 3: Create outer blackbox using pointer to blackboxes
 	fmt.Println("\nCreating outer blackbox (Level 2)...")
 
-	outerBlackBox := blackbox.New[*blackbox.BlackBox[PrizeItem]](blackbox.WithStrategy(blackbox.StrategyRandom))
+	outerBlackBox := blackbox.New[blackbox.BlackBox[PrizeItem]](blackbox.WithStrategy(blackbox.StrategyRandom))
 	outerBlackBox.Put(innerBlackBox1)
 	outerBlackBox.Put(innerBlackBox2)
 	fmt.Println("✓ Outer box created containing 2 middle boxes")

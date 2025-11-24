@@ -1,7 +1,9 @@
 package blackbox
 
 import (
+	"math/rand"
 	"testing"
+	"time"
 )
 
 func TestFIFOStrategy(t *testing.T) {
@@ -202,6 +204,7 @@ func TestPeek(t *testing.T) {
 func BenchmarkLIFOPut(b *testing.B) {
 	box := New[int](WithStrategy(StrategyLIFO), WithInitialCapacity(b.N))
 	i := 0
+	b.ResetTimer()
 	for b.Loop() {
 		box.Put(i)
 		i++
@@ -213,33 +216,37 @@ func BenchmarkLIFOGet(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		box.Put(i)
 	}
-	for b.Loop() {
-		box.Get()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = box.Get()
 	}
 }
 
-func BenchmarkRandomPut(b *testing.B) {
-	box := New[int](WithStrategy(StrategyRandom), WithInitialCapacity(b.N))
+func BenchmarkConcreteLIFOPut(b *testing.B) {
+	box := NewLIFO[int](0, b.N)
 	i := 0
+	b.ResetTimer()
 	for b.Loop() {
 		box.Put(i)
 		i++
 	}
 }
 
-func BenchmarkRandomGet(b *testing.B) {
-	box := New[int](WithStrategy(StrategyRandom), WithInitialCapacity(b.N))
+func BenchmarkConcreteLIFOGet(b *testing.B) {
+	box := NewLIFO[int](0, b.N)
 	for i := 0; i < b.N; i++ {
 		box.Put(i)
 	}
-	for b.Loop() {
-		box.Get()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = box.Get()
 	}
 }
 
 func BenchmarkFIFOPut(b *testing.B) {
 	box := New[int](WithStrategy(StrategyFIFO), WithInitialCapacity(b.N))
 	i := 0
+	b.ResetTimer()
 	for b.Loop() {
 		box.Put(i)
 		i++
@@ -251,58 +258,70 @@ func BenchmarkFIFOGet(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		box.Put(i)
 	}
+	b.ResetTimer()
 	for b.Loop() {
-		box.Get()
+		_, _ = box.Get()
 	}
 }
 
-func BenchmarkFIFOSteadyState(b *testing.B) {
-	box := New[int](WithStrategy(StrategyFIFO), WithInitialCapacity(1_000_000))
-
-	// Pre-fill with 1M items
-	for i := 0; i < 1_000_000; i++ {
-		box.Put(i)
-	}
-
+func BenchmarkConcreteFIFOPut(b *testing.B) {
+	box := NewFIFO[int](0, b.N)
+	i := 0
 	b.ResetTimer()
-	counter := 1_000_000
-	for i := 0; i < b.N; i++ {
-		box.Put(counter) // Add one item
-		box.Get()        // Remove one item
-		counter++
+	for b.Loop() {
+		box.Put(i)
+		i++
 	}
 }
 
-func BenchmarkLIFOSteadyState(b *testing.B) {
-	box := New[int](WithStrategy(StrategyLIFO), WithInitialCapacity(1_000_000))
-
-	// Pre-fill with 1M items
-	for i := 0; i < 1_000_000; i++ {
+func BenchmarkConcreteFIFOGet(b *testing.B) {
+	box := NewFIFO[int](0, b.N)
+	for i := 0; i < b.N; i++ {
 		box.Put(i)
 	}
-
 	b.ResetTimer()
-	counter := 1_000_000
-	for i := 0; i < b.N; i++ {
-		box.Put(counter) // Add one item
-		box.Get()        // Remove one item
-		counter++
+	for b.Loop() {
+		_, _ = box.Get()
 	}
 }
 
-func BenchmarkRandomSteadyState(b *testing.B) {
-	box := New[int](WithStrategy(StrategyRandom), WithInitialCapacity(1_000_000))
+func BenchmarkRandomPut(b *testing.B) {
+	box := New[int](WithStrategy(StrategyRandom), WithInitialCapacity(b.N))
+	i := 0
+	b.ResetTimer()
+	for b.Loop() {
+		box.Put(i)
+		i++
+	}
+}
 
-	// Pre-fill with 1M items
-	for i := 0; i < 1_000_000; i++ {
+func BenchmarkRandomGet(b *testing.B) {
+	box := New[int](WithStrategy(StrategyRandom), WithInitialCapacity(b.N))
+	for i := 0; i < b.N; i++ {
 		box.Put(i)
 	}
-
 	b.ResetTimer()
-	counter := 1_000_000
+	for b.Loop() {
+		_, _ = box.Get()
+	}
+}
+
+func BenchmarkConcreteRandomPut(b *testing.B) {
+	box := NewRandom[int](0, b.N, rand.New(rand.NewSource(time.Now().UnixNano())))
+	i := 0
+	b.ResetTimer()
+	for b.Loop() {
+		box.Put(i)
+		i++
+	}
+}
+func BenchmarkConcreteRandomGet(b *testing.B) {
+	box := NewRandom[int](0, b.N, rand.New(rand.NewSource(time.Now().UnixNano())))
 	for i := 0; i < b.N; i++ {
-		box.Put(counter) // Add one item
-		box.Get()        // Remove one item
-		counter++
+		box.Put(i)
+	}
+	b.ResetTimer()
+	for b.Loop() {
+		_, _ = box.Get()
 	}
 }

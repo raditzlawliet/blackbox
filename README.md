@@ -2,15 +2,13 @@
 
 A generic Go library that creates a literal "black box" - throw anything in, and see what comes out! Perfect for when you need unpredictability, or just want to manage collections with different retrieval strategies.
 
-## What is BlackBox?
-
 BlackBox is a type-safe, generic container where you can:
 
 - **Put** anything in
 - **Peek** at what might come out next (without removing it)
 - **Get** item out using different strategies
 
-The mystery? You can't see what's inside - you can only peek at one item at a time or get them out. True black box behavior!
+The mystery? You can't see what's inside - you can only peek at one item at a time or get them out. Hehe...
 
 ## Features
 
@@ -125,7 +123,7 @@ box := blackbox.New[int](
 )
 ```
 
-### Custom Random Seed
+### Custom Random Seed (Only Available for: StrategyRandom)
 
 Make random behavior reproducible:
 
@@ -197,11 +195,12 @@ box.Clean()
 
 Example implementations are available in the `examples/` directory:
 
-- **[examples/basic](examples/basic)** - Basic usage of all three strategies (Random, LIFO, FIFO)
-- **[examples/lucky_draw](examples/lucky_draw)** - Lucky draw system with random winner selection
-- **[examples/task_queue](examples/task_queue)** - FIFO task queue with capacity management
-- **[examples/undo_stack](examples/undo_stack)** - LIFO undo/redo system for command history
-- **[examples/nested_blackbox](examples/nested_blackbox)** - Nested blackbox patterns
+- **[examples/basic](examples/basic/main.go)** - Basic usage of all three strategies (Random, LIFO, FIFO)
+- **[examples/lucky_draw](examples/lucky_draw/main.go)** - Lucky draw system with random winner selection
+- **[examples/task_queue](examples/task_queue/main.go)** - FIFO task queue with capacity management
+- **[examples/undo_stack](examples/undo_stack/main.go)** - LIFO undo/redo system for command history
+- **[examples/nested_blackbox](examples/nested_blackbox/main.go)** - Nested blackbox patterns
+- **[examples/concrete_types](examples/concrete_types/main.go)** - Direct box creation with concrete types
 
 ### Lucky Draw System
 
@@ -273,11 +272,44 @@ userBox := blackbox.New[UserID]()
 
 ## Performance
 
-BlackBox is optimized for each strategy:
+BlackBox is highly optimized:
 
 - **Random**: Removal using swap with last
 - **LIFO**: Using slice operations
 - **FIFO**: Using ring buffer
+
+### Concrete Type
+
+BlackBox also provide direct constructor each strategy so it can enable compiler optimizations
+
+```go
+lifoBox := blackbox.NewLIFO[string](5, 10)
+fifoBox := blackbox.NewFIFO[string](5, 10)
+randomBox := blackbox.NewRandom[int](0, b.N, rand.New(rand.NewSource(time.Now().UnixNano())))
+```
+
+### Benchmark Interface vs Direct Concrete Type
+
+_This benchmark shows the performance difference between using the interface and the direct concrete type for each strategy. Only for reference, may different in realworld use case. Choose your self._
+
+```sh
+goos: windows
+goarch: amd64
+pkg: raditzlawliet/blackbox
+cpu: 12th Gen Intel(R) Core(TM) i7-12700H
+BenchmarkLIFOPut-20              	10000000	         9.007 ns/op	      49 B/op	       0 allocs/op
+BenchmarkLIFOGet-20              	10000000	         1.727 ns/op	       0 B/op	       0 allocs/op
+BenchmarkConcreteLIFOPut-20      	10000000	         5.923 ns/op	      49 B/op	       0 allocs/op
+BenchmarkConcreteLIFOGet-20      	10000000	         0.2586 ns/op	       0 B/op	       0 allocs/op
+BenchmarkFIFOPut-20              	10000000	         8.294 ns/op	      26 B/op	       0 allocs/op
+BenchmarkFIFOGet-20              	10000000	         1.266 ns/op	       0 B/op	       0 allocs/op
+BenchmarkConcreteFIFOPut-20      	10000000	         8.216 ns/op	      26 B/op	       0 allocs/op
+BenchmarkConcreteFIFOGet-20      	10000000	         0.8256 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRandomPut-20            	10000000	         6.864 ns/op	      49 B/op	       0 allocs/op
+BenchmarkRandomGet-20            	10000000	         1.600 ns/op	       0 B/op	       0 allocs/op
+BenchmarkConcreteRandomPut-20    	10000000	         5.747 ns/op	      49 B/op	       0 allocs/op
+BenchmarkConcreteRandomGet-20    	10000000	         0.8947 ns/op	       0 B/op	       0 allocs/op
+```
 
 ## Philosophy
 
@@ -296,5 +328,3 @@ Feel free to:
 ---
 
 Made with 🥰 and a bit of chaos...
-
-**Remember**: Life is like a BlackBox - you never know what you're gonna get!
