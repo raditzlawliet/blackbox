@@ -6,10 +6,12 @@ import (
 
 type randomBox[T any] struct {
 	items   []T
-	maxSize int
 	rng     *rand.Rand
+	maxSize int
 }
 
+// NewRandom creates a new Random blackbox with the specified maximum size, capacity and rng.
+// Returns a concrete instance of lifo blackbox without interface.
 func NewRandom[T any](maxSize, capacity int, rng *rand.Rand) *randomBox[T] {
 	return &randomBox[T]{
 		items:   make([]T, 0, capacity),
