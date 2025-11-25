@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"raditzlawliet/blackbox"
 	"time"
+
+	"github.com/raditzlawliet/blackbox"
 )
 
 // Task represents a work item to be processed

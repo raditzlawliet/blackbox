@@ -29,7 +29,7 @@ package main
 
 import (
     "fmt"
-    "raditzlawliet/blackbox"
+    "github.com/raditzlawliet/blackbox"
 )
 
 func main() {
@@ -295,7 +295,7 @@ _This benchmark shows the performance difference between using the interface and
 ```sh
 goos: windows
 goarch: amd64
-pkg: raditzlawliet/blackbox
+pkg: github.com/raditzlawliet/blackbox
 cpu: 12th Gen Intel(R) Core(TM) i7-12700H
 BenchmarkLIFOPut-20              	10000000	         9.007 ns/op	      49 B/op	       0 allocs/op
 BenchmarkLIFOGet-20              	10000000	         1.727 ns/op	       0 B/op	       0 allocs/op

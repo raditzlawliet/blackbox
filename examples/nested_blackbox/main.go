@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"raditzlawliet/blackbox"
+	"github.com/raditzlawliet/blackbox"
 )
 
 // PrizeItem represents an item with a name and content

@@ -3,7 +3,8 @@ package main
 import (
 	"fmt"
 	"math/rand"
-	"raditzlawliet/blackbox"
+
+	"github.com/raditzlawliet/blackbox"
 )
 
 func main() {

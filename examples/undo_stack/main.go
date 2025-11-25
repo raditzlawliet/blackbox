@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"raditzlawliet/blackbox"
+
+	"github.com/raditzlawliet/blackbox"
 )
 
 // Command represents an action that can be executed and undone
