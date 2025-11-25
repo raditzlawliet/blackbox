@@ -3,9 +3,10 @@ package blackbox
 type lifoBox[T any] struct {
 	items   []T
 	maxSize int
-	zero    T
 }
 
+// NewLIFO creates a new LIFO blackbox with the specified maximum size and capacity.
+// Returns a concrete instance of lifo blackbox without interface.
 func NewLIFO[T any](maxSize, capacity int) *lifoBox[T] {
 	return &lifoBox[T]{
 		items:   make([]T, 0, capacity),
@@ -23,7 +24,8 @@ func (b *lifoBox[T]) Put(item T) error {
 
 func (b *lifoBox[T]) Get() (T, error) {
 	if len(b.items) == 0 {
-		return b.zero, ErrEmptyBlackBox
+		var zero T
+		return zero, ErrEmptyBlackBox
 	}
 	lastIdx := len(b.items) - 1
 	item := b.items[lastIdx]
@@ -33,7 +35,8 @@ func (b *lifoBox[T]) Get() (T, error) {
 
 func (b *lifoBox[T]) Peek() (T, error) {
 	if len(b.items) == 0 {
-		return b.zero, ErrEmptyBlackBox
+		var zero T
+		return zero, ErrEmptyBlackBox
 	}
 	return b.items[len(b.items)-1], nil
 }

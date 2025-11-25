@@ -1,5 +1,8 @@
 # BlackBox
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/raditzlawliet/blackbox.svg)](https://pkg.go.dev/github.com/raditzlawliet/blackbox)
+[![codecov](https://codecov.io/gh/raditzlawliet/blackbox/graph/badge.svg?token=VJH1C5BFLN)](https://codecov.io/gh/raditzlawliet/blackbox)
+
 A generic Go library that creates a literal "black box" - throw anything in, and see what comes out! Perfect for when you need unpredictability, or just want to manage collections with different retrieval strategies.
 
 BlackBox is a type-safe, generic container where you can:

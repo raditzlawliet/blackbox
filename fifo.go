@@ -8,6 +8,8 @@ type fifoBox[T any] struct {
 	maxSize int
 }
 
+// NewFIFO creates a new FIFO blackbox with the specified maximum size and capacity.
+// Returns a concrete instance of lifo blackbox without interface.
 func NewFIFO[T any](maxSize, capacity int) *fifoBox[T] {
 	return &fifoBox[T]{
 		items:   make([]T, capacity),

@@ -16,7 +16,36 @@ const (
 	growthFactor           = 2
 )
 
-// BlackBox is the interface that will be implemented by all strategy
+// BlackBox is a generic container with a configurable retrieval strategy.
+//
+// Implementations of BlackBox[T] provide a way to store items of type T and
+// retrieve them according to a strategy (FIFO, LIFO, Random).
+//
+// Method behavior (common across implementations):
+//   - Put(item T) error
+//     Insert an item into the blackbox. If the blackbox has a configured
+//     maximum capacity and is already full, Put returns ErrBlackBoxFull.
+//   - Get() (T, error)
+//     Remove and return an item according to the configured retrieval strategy.
+//     If the blackbox is empty, Get returns a zero value of T and ErrEmptyBlackBox.
+//   - Peek() (T, error)
+//     Return an item according to the configured retrieval strategy without
+//     removing it. If the blackbox is empty, Peek returns a zero value of T
+//     and ErrEmptyBlackBox. Note that for strategies like Random, repeated
+//     calls to Peek may return different items.
+//   - Size() int
+//     Return the current number of stored items.
+//   - MaxSize() int
+//     Return the configured maximum capacity (0 means unlimited).
+//   - IsFull() bool
+//     Return true when the blackbox has a non-zero MaxSize and Size() >= MaxSize().
+//   - IsEmpty() bool
+//     Return true when Size() == 0.
+//   - Clean()
+//     Remove all items from the blackbox, resetting its size to zero.
+//
+// Implementations returned by New[T] honor these semantics but differ in
+// selection behavior (StrategyFIFO, StrategyLIFO, StrategyRandom).
 type BlackBox[T any] interface {
 	Put(item T) error
 	Get() (T, error)
@@ -96,7 +125,15 @@ func parseOptions(opts []Option) config {
 	return cfg
 }
 
-// New creates a new BlackBox with the specified options
+// New creates a new BlackBox with the specified options.
+//
+// The returned implementation depends on the configured Strategy:
+//   - StrategyFIFO -> FIFO behavior (first inserted is first returned)
+//   - StrategyLIFO -> LIFO behavior (last inserted is first returned)
+//   - StrategyRandom -> Random selection behavior (requires an RNG)
+//
+// For the Random strategy, if WithSeed was used the RNG will be seeded with
+// the provided seed for reproducible behavior; otherwise a time-based seed is used.
 func New[T any](opts ...Option) BlackBox[T] {
 	cfg := parseOptions(opts)
 	switch cfg.strategy {
