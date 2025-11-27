@@ -28,16 +28,16 @@ jobs:
       - name: Run tests
         run: go test ./...
 
-      - name: Run tests with coverage (latest Go only, push to main)
-        if: matrix.go-version == 'stable' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Run tests with coverage (latest Go only)
+        if: matrix.go-version == 'stable'
         run: go test -coverprofile=coverage.txt -covermode=atomic
 
       - name: Upload results to Codecov
-        if: matrix.go-version == 'stable' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: matrix.go-version == 'stable'
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.txt
           flags: unittests
           name: codecov-umbrella
-          fail_ci_if_error: true
+          fail_ci_if_error: false
