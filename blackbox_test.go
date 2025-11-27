@@ -1,9 +1,17 @@
 package blackbox
 
 import (
-	"slices"
 	"testing"
 )
+
+func ContainsInt(s []int, v int) bool {
+	for _, x := range s {
+		if x == v {
+			return true
+		}
+	}
+	return false
+}
 
 func TestFIFOStrategy(t *testing.T) {
 	box := New[int](WithStrategy(StrategyFIFO))
@@ -92,7 +100,7 @@ func TestRandomStrategy(t *testing.T) {
 
 	// Test Random retrieval (just verify all items are retrieved)
 	retrieved := make(map[int]bool)
-	for range 5 {
+	for i := 0; i < 5; i++ {
 		item, err := box.Get()
 		if err != nil {
 			t.Fatalf("Failed to get item: %v", err)
@@ -299,7 +307,7 @@ func TestPeek(t *testing.T) {
 				t.Errorf("Expected peek to return 3, got %d", item)
 			}
 		case StrategyRandom:
-			if !slices.Contains([]int{1, 2, 3}, item) {
+			if !ContainsInt([]int{1, 2, 3}, item) {
 				t.Errorf("Expected peek to return 1 to 3, got %d", item)
 			}
 		}
@@ -310,7 +318,7 @@ func TestPeek(t *testing.T) {
 		}
 
 		// Get all items
-		for range 3 {
+		for i := 0; i < 3; i++ {
 			box.Get()
 		}
 

@@ -2,6 +2,9 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/raditzlawliet/blackbox.svg)](https://pkg.go.dev/github.com/raditzlawliet/blackbox)
 [![codecov](https://codecov.io/gh/raditzlawliet/blackbox/graph/badge.svg?token=VJH1C5BFLN)](https://codecov.io/gh/raditzlawliet/blackbox)
+[![Go Report Card](https://goreportcard.com/badge/github.com/raditzlawliet/blackbox)](https://goreportcard.com/report/github.com/raditzlawliet/blackbox)
+![GitHub License](https://img.shields.io/github/license/raditzlawliet/blackbox)
+![GitHub Release](https://img.shields.io/github/v/release/raditzlawliet/blackbox)
 
 A generic Go library that creates a literal "black box" - throw anything in, and see what comes out! Perfect for when you need unpredictability, or just want to manage collections with different retrieval strategies.
 
@@ -94,9 +97,9 @@ _ = box.Put("third")
 
 ## Configuration Options
 
-- WithMaxSize(int): set logical maximum number of items (0 = unlimited)
-- WithInitialCapacity(int): pre-allocate underlying storage to avoid early reallocations
-- WithSeed(int64): seed the RNG for the Random strategy (reproducible behavior)
+- `WithMaxSize(int)`: set logical maximum number of items (0 = unlimited)
+- `WithInitialCapacity(int)`: pre-allocate underlying storage to avoid early reallocations
+- `WithSeed(int64)`: seed the RNG for the Random strategy (reproducible behavior)
 
 ## API Reference
 
@@ -106,15 +109,15 @@ Methods common to all boxes:
 - `Get() (T, error)` — remove and return an item (returns `ErrEmptyBlackBox` if empty)
 - `Peek() (T, error)` — view next item without removing
 - `Size() int` — current number of items
-- `MaxSize() int` — configured maximum size (0 = unlimited)
+- `MaxSize() int` — configured maximum size (0 = unlimited). You can't have zero-max-size box, for what?
 - `IsFull() bool`, `IsEmpty() bool`
 - `Clean()` — remove all items
 
 Concrete constructors available for performance-sensitive use:
 
-- `NewFIFO[T](maxSize, capacity int) *fifoBox[T]`
-- `NewLIFO[T](maxSize, capacity int) *lifoBox[T]`
-- `NewRandom[T](maxSize, capacity int, rng *rand.Rand) *randomBox[T]`
+- `NewFIFO[T] (maxSize, capacity int) *fifoBox[T]`
+- `NewLIFO[T] (maxSize, capacity int) *lifoBox[T]`
+- `NewRandom[T] (maxSize, capacity int, rng *rand.Rand) *randomBox[T]`
 
 Use the generic `New[T](opts...) BlackBox[T]` factory for convenience and option-based configuration.
 
@@ -164,17 +167,17 @@ func main() {
 
 Notes:
 
-- See `examples/concurrent` for a small runnable demo that shows producers and consumers using `NewConcurrent`.
+- See [`examples/concurrent`](examples/concurrent/main.go) for a small runnable demo that shows producers and consumers using `NewConcurrent`.
 - The concurrent wrapper serializes operations with a single `sync.Mutex`.
 
 ## Examples
 
-- `examples/basic` — basic usage for Random / LIFO / FIFO
-- `examples/concurrent` — simple concurrent usage demonstrating `NewConcurrent`
-- `examples/task_queue` — FIFO task queue
-- `examples/lucky_draw` — Random strategy example
-- `examples/undo_stack` — LIFO undo/redo sample
-- `examples/concrete_types` — direct constructor usage (concrete types)
+- [`examples/basic`](examples/basic/main.go) — basic usage for Random / LIFO / FIFO
+- [`examples/concurrent`](examples/concurrent/main.go) — simple concurrent usage demonstrating `NewConcurrent`
+- [`examples/task_queue`](examples/task_queue/main.go) — FIFO task queue
+- [`examples/lucky_draw`](examples/lucky_draw/main.go) — Random strategy example
+- [`examples/undo_stack`](examples/undo_stack/main.go) — LIFO undo/redo sample
+- [`examples/concrete_types`](examples/concrete_types/main.go) — direct constructor usage (concrete types)
 
 ## Performance
 

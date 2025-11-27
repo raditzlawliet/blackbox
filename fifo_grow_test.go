@@ -1,13 +1,24 @@
 package blackbox
 
 import (
-	"slices"
 	"testing"
 )
 
+func EqualInts(a, b []int) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 func TestFIFOGrowWithZero(t *testing.T) {
 	b := NewFIFO[int](0, 0)
-	for i := range 8 {
+	for i := 0; i < 8; i++ {
 		b.Put(i)
 	}
 	if b.Size() != 8 {
@@ -18,7 +29,7 @@ func TestFIFOGrowWithZero(t *testing.T) {
 func TestFIFOGrowCopiesContiguousRangeWhenHeadLessThanTail(t *testing.T) {
 	// Create a fifo with capacity 8 and populate it with distinct values.
 	b := NewFIFO[int](0, 8)
-	for i := range 8 {
+	for i := 0; i < 8; i++ {
 		b.items[i] = i
 	}
 
@@ -48,7 +59,7 @@ func TestFIFOGrowCopiesContiguousRangeWhenHeadLessThanTail(t *testing.T) {
 	// Verify the items were copied in order from b.items[1:5].
 	want := []int{1, 2, 3, 4}
 	got := b.items[:b.size]
-	if !slices.Equal(got, want) {
+	if !EqualInts(got, want) {
 		t.Fatalf("items mismatch: want %v got %v", want, got)
 	}
 }
@@ -57,7 +68,7 @@ func TestFIFOGrowRespectsMaxSizeAndCopiesWrapAround(t *testing.T) {
 	// Create a fifo with initial capacity 8 and a maxSize that will limit growth.
 	max := 5
 	b := NewFIFO[int](max, 8)
-	for i := range 8 {
+	for i := 0; i < 8; i++ {
 		b.items[i] = i
 	}
 
@@ -87,7 +98,7 @@ func TestFIFOGrowRespectsMaxSizeAndCopiesWrapAround(t *testing.T) {
 	// original sequence (from head=6, tail=3): [6,7,0,1,2]
 	want := []int{6, 7, 0, 1, 2}
 	got := b.items[:b.size]
-	if !slices.Equal(got, want) {
+	if !EqualInts(got, want) {
 		t.Fatalf("wrapped copy mismatch: want %v got %v", want, got)
 	}
 }

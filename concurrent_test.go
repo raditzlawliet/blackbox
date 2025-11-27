@@ -30,12 +30,12 @@ func TestConcurrentWrapperNoDataLoss(t *testing.T) {
 
 	// producers
 	pwg.Add(producers)
-	for p := range producers {
+	for p := 0; p < producers; p++ {
 		pid := p
 		go func() {
 			defer pwg.Done()
 			base := pid * itemsPerProducer
-			for i := range itemsPerProducer {
+			for i := 0; i < itemsPerProducer; i++ {
 				val := base + i
 				if err := box.Put(val); err != nil {
 					errs <- fmt.Errorf("Put returned error: %v", err)
@@ -50,7 +50,7 @@ func TestConcurrentWrapperNoDataLoss(t *testing.T) {
 	var consumed int64
 	consumers := 6
 	cwg.Add(consumers)
-	for range consumers {
+	for i := 0; i < consumers; i++ {
 		go func() {
 			defer cwg.Done()
 			for {
@@ -96,9 +96,9 @@ func TestConcurrentWrapperNoDataLoss(t *testing.T) {
 	if len(seen) != total {
 		t.Fatalf("expected seen map size %d, got %d", total, len(seen))
 	}
-	for p := range producers {
+	for p := 0; p < producers; p++ {
 		base := p * itemsPerProducer
-		for i := range itemsPerProducer {
+		for i := 0; i < itemsPerProducer; i++ {
 			v := base + i
 			if cnt, ok := seen[v]; !ok {
 				t.Fatalf("missing item %d", v)
@@ -130,12 +130,12 @@ func TestConcurrentWrapper_StrategiesBasic(t *testing.T) {
 		var consumed int64
 		pwg.Add(producers)
 
-		for p := range producers {
+		for p := 0; p < producers; p++ {
 			pid := p
 			go func() {
 				defer pwg.Done()
 				base := pid * itemsPerProducer
-				for i := range itemsPerProducer {
+				for i := 0; i < itemsPerProducer; i++ {
 					val := base + i
 					if err := cbox.Put(val); err != nil {
 						errs <- fmt.Errorf("Put error for strategy %v: %v", strat, err)
@@ -147,7 +147,7 @@ func TestConcurrentWrapper_StrategiesBasic(t *testing.T) {
 		// Consumers
 		consumers := 4
 		cwg.Add(consumers)
-		for range consumers {
+		for i := 0; i < consumers; i++ {
 			go func() {
 				defer cwg.Done()
 				for {
@@ -259,7 +259,7 @@ func benchmarkConcurrentPut(b *testing.B, box BlackBox[int]) {
 func benchmarkConcurrentGet(b *testing.B, box BlackBox[int]) {
 	cb := NewConcurrent(box)
 
-	for i := range b.N {
+	for i := 0; i < b.N; i++ {
 		_ = cb.Put(i)
 	}
 
