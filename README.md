@@ -2,6 +2,7 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/raditzlawliet/blackbox.svg)](https://pkg.go.dev/github.com/raditzlawliet/blackbox)
 [![codecov](https://codecov.io/gh/raditzlawliet/blackbox/graph/badge.svg?token=VJH1C5BFLN)](https://codecov.io/gh/raditzlawliet/blackbox)
+[![Go Report Card](https://goreportcard.com/badge/github.com/raditzlawliet/blackbox)](https://goreportcard.com/report/github.com/raditzlawliet/blackbox)
 
 A generic Go library that creates a literal "black box" - throw anything in, and see what comes out! Perfect for when you need unpredictability, or just want to manage collections with different retrieval strategies.
 
@@ -106,7 +107,7 @@ Methods common to all boxes:
 - `Get() (T, error)` — remove and return an item (returns `ErrEmptyBlackBox` if empty)
 - `Peek() (T, error)` — view next item without removing
 - `Size() int` — current number of items
-- `MaxSize() int` — configured maximum size (0 = unlimited)
+- `MaxSize() int` — configured maximum size (0 = unlimited). You can't have zero-max-size box, for what?
 - `IsFull() bool`, `IsEmpty() bool`
 - `Clean()` — remove all items
 
