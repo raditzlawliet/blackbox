@@ -1,6 +1,6 @@
 # BlackBox
 
-A generic Go library that creates a literal "black box" - throw anything in, and see what comes out! Perfect for when you need unpredictability, or just want to manage collections with different retrieval strategies.
+A generic Go library that creates a literal "black box" — throw anything in, and see what comes out! Perfect for when you need unpredictability, or just want to manage collections with different retrieval strategies.
 
 BlackBox is a type-safe, generic container where you can:
 
@@ -37,13 +37,14 @@ func main() {
     box := blackbox.New[string]()
 
     // Put items in
-    box.Put("apple")
-    box.Put("banana")
-    box.Put("cherry")
+    _ = box.Put("apple")
+    _ = box.Put("banana")
+    _ = box.Put("cherry")
 
     // Peek at what might come out (doesn't remove it)
-    item, _ := box.Peek()
-    fmt.Println("Peeked:", item)
+    if item, err := box.Peek(); err == nil {
+        fmt.Println("Peeked:", item)
+    }
 
     // Get items out (removes them)
     for !box.IsEmpty() {
@@ -57,263 +58,127 @@ func main() {
 
 ### Random (Default)
 
-Get a random item each time - perfect for lucky draws!
+Get a random item each time — useful for draws and lotteries.
 
 ```go
 box := blackbox.New[int](blackbox.WithStrategy(blackbox.StrategyRandom))
-box.Put(1)
-box.Put(2)
-box.Put(3)
-
-// Might get 2, then 1, then 3... who knows! 🎲
+_ = box.Put(1)
+_ = box.Put(2)
+_ = box.Put(3)
 ```
 
 ### LIFO (Stack)
 
-Last In, First Out - like a stack of plates!
+Last In, First Out — like a stack of plates.
 
 ```go
 box := blackbox.New[string](blackbox.WithStrategy(blackbox.StrategyLIFO))
-box.Put("first")
-box.Put("second")
-box.Put("third")
-
-box.Get() // Returns "third"
-box.Get() // Returns "second"
-box.Get() // Returns "first"
+_ = box.Put("first")
+_ = box.Put("second")
+_ = box.Put("third")
 ```
 
 ### FIFO (Queue)
 
-First In, First Out - like a fair queue!
+First In, First Out — a traditional queue.
 
 ```go
 box := blackbox.New[string](blackbox.WithStrategy(blackbox.StrategyFIFO))
-box.Put("first")
-box.Put("second")
-box.Put("third")
-
-box.Get() // Returns "first"
-box.Get() // Returns "second"
-box.Get() // Returns "third"
+_ = box.Put("first")
+_ = box.Put("second")
+_ = box.Put("third")
 ```
 
 ## Configuration Options
 
-### Maximum Size
-
-Limit how many items the box can hold:
-
-```go
-box := blackbox.New[int](
-    blackbox.WithMaxSize(100), // Max 100 items
-)
-
-// When full:
-err := box.Put(item) // Returns ErrBlackBoxFull
-```
-
-### Initial Capacity
-
-Pre-allocate memory for better performance:
-
-```go
-box := blackbox.New[int](
-    blackbox.WithInitialCapacity(1000), // Pre-allocate for 1000 items, useful on FIFO
-)
-```
-
-### Custom Random Seed (Only Available for: StrategyRandom)
-
-Make random behavior reproducible:
-
-```go
-box := blackbox.New[int](
-    blackbox.WithStrategy(blackbox.StrategyRandom),
-    blackbox.WithSeed(42), // Same seed = same random sequence
-)
-```
+- WithMaxSize(int): set logical maximum number of items (0 = unlimited)
+- WithInitialCapacity(int): pre-allocate underlying storage to avoid early reallocations
+- WithSeed(int64): seed the RNG for the Random strategy (reproducible behavior)
 
 ## API Reference
 
-### Creating a BlackBox
+Methods common to all boxes:
+
+- `Put(item T) error` — insert an item (returns `ErrBlackBoxFull` if max size reached)
+- `Get() (T, error)` — remove and return an item (returns `ErrEmptyBlackBox` if empty)
+- `Peek() (T, error)` — view next item without removing
+- `Size() int` — current number of items
+- `MaxSize() int` — configured maximum size (0 = unlimited)
+- `IsFull() bool`, `IsEmpty() bool`
+- `Clean()` — remove all items
+
+Concrete constructors available for performance-sensitive use:
+
+- `NewFIFO[T](maxSize, capacity int) *fifoBox[T]`
+- `NewLIFO[T](maxSize, capacity int) *lifoBox[T]`
+- `NewRandom[T](maxSize, capacity int, rng *rand.Rand) *randomBox[T]`
+
+Use the generic `New[T](opts...) BlackBox[T]` factory for convenience and option-based configuration.
+
+## Concurrency
+
+The core implementations (`fifo`, `lifo`, `random`) are intentionally lightweight and are **not** goroutine-safe by default to preserve single-threaded performance.
+
+If you need safe concurrent access, we provide a simple, opt-in wrapper: `NewConcurrent`.
+
+- `NewConcurrent(box)` returns a `BlackBox[T]` that serializes all calls with a mutex.
+- This approach keeps the fast, lock-free implementations unchanged while offering an easy way to share a box across goroutines.
+
+Example (concurrent wrapper):
 
 ```go
-// Create with default options (random strategy)
-box := blackbox.New[T]()
+package main
 
-// Create with custom options
-box := blackbox.New[T](options...)
+import (
+    "fmt"
+    "sync"
+    "github.com/raditzlawliet/blackbox"
+)
+
+func main() {
+    // Create a concrete FIFO and wrap it for concurrent access
+    fifo := blackbox.NewFIFO[int](0, 16)
+    cbox := blackbox.NewConcurrent[int](fifo)
+
+    var wg sync.WaitGroup
+    wg.Add(2)
+
+    go func() {
+        defer wg.Done()
+        _ = cbox.Put(42)
+    }()
+
+    go func() {
+        defer wg.Done()
+        if v, err := cbox.Get(); err == nil {
+            fmt.Println("Got:", v)
+        }
+    }()
+
+    wg.Wait()
+}
 ```
 
-### Adding Items
+Notes:
 
-```go
-err := box.Put(item)
-// Returns ErrBlackBoxFull if max capacity reached
-```
-
-### Retrieving Items
-
-```go
-// Get and remove an item
-item, err := box.Get()
-// Returns ErrEmptyBlackBox if empty
-
-// Peek at an item without removing
-item, err := box.Peek()
-// Returns ErrEmptyBlackBox if empty
-```
-
-### Status Checks
-
-```go
-// Check how many items are inside (but not what they are!)
-size := box.Size()
-
-// Check if empty
-isEmpty := box.IsEmpty()
-
-// Check if full (when max size is set)
-isFull := box.IsFull()
-
-// Get current internal capacity
-capacity := box.Capacity()
-
-// Get maximum size (0 = unlimited)
-maxSize := box.MaxSize()
-```
-
-### Maintenance
-
-```go
-// Remove all items
-box.Clean()
-```
+- See `examples/concurrent` for a small runnable demo that shows producers and consumers using `NewConcurrent`.
+- The concurrent wrapper serializes operations with a single `sync.Mutex`.
 
 ## Examples
 
-Example implementations are available in the `examples/` directory:
-
-- **[examples/basic](examples/basic/main.go)** - Basic usage of all three strategies (Random, LIFO, FIFO)
-- **[examples/lucky_draw](examples/lucky_draw/main.go)** - Lucky draw system with random winner selection
-- **[examples/task_queue](examples/task_queue/main.go)** - FIFO task queue with capacity management
-- **[examples/undo_stack](examples/undo_stack/main.go)** - LIFO undo/redo system for command history
-- **[examples/nested_blackbox](examples/nested_blackbox/main.go)** - Nested blackbox patterns
-- **[examples/concrete_types](examples/concrete_types/main.go)** - Direct box creation with concrete types
-
-### Lucky Draw System
-
-```go
-participants := blackbox.New[string](blackbox.WithStrategy(blackbox.StrategyRandom))
-participants.Put("Alice")
-participants.Put("Bob")
-participants.Put("Charlie")
-
-winner, _ := participants.Get()
-fmt.Println("Winner:", winner)
-```
-
-#### Task Queue with Capacity
-
-```go
-taskQueue := blackbox.New[Task](
-    blackbox.WithStrategy(blackbox.StrategyFIFO),
-    blackbox.WithMaxSize(100),
-)
-
-for _, task := range tasks {
-    if err := taskQueue.Put(task); err != nil {
-        log.Printf("Queue full: %v", err)
-    }
-}
-```
-
-### Undo Stack
-
-```go
-undoStack := blackbox.New[Command](blackbox.WithStrategy(blackbox.StrategyLIFO))
-
-cmd.Execute()
-undoStack.Put(cmd)
-
-// Undo
-lastCmd, _ := undoStack.Get()
-lastCmd.Undo()
-```
-
-## Type Support
-
-BlackBox works with any type thanks to Go generics:
-
-```go
-// Basic types
-intBox := blackbox.New[int]()
-stringBox := blackbox.New[string]()
-floatBox := blackbox.New[float64]()
-
-// Structs
-type Person struct {
-    Name string
-    Age  int
-}
-peopleBox := blackbox.New[Person]()
-
-// Pointers
-ptrBox := blackbox.New[*MyStruct]()
-
-// Interfaces
-interfaceBox := blackbox.New[io.Reader]()
-
-// Custom types
-type UserID string
-userBox := blackbox.New[UserID]()
-```
+- `examples/basic` — basic usage for Random / LIFO / FIFO
+- `examples/concurrent` — simple concurrent usage demonstrating `NewConcurrent`
+- `examples/task_queue` — FIFO task queue
+- `examples/lucky_draw` — Random strategy example
+- `examples/undo_stack` — LIFO undo/redo sample
+- `examples/concrete_types` — direct constructor usage (concrete types)
 
 ## Performance
 
-BlackBox is highly optimized:
-
-- **Random**: Removal using swap with last
-- **LIFO**: Using slice operations
-- **FIFO**: Using ring buffer
-
-### Concrete Type
-
-BlackBox also provide direct constructor each strategy so it can enable compiler optimizations
-
-```go
-lifoBox := blackbox.NewLIFO[string](5, 10)
-fifoBox := blackbox.NewFIFO[string](5, 10)
-randomBox := blackbox.NewRandom[int](0, b.N, rand.New(rand.NewSource(time.Now().UnixNano())))
-```
-
-### Benchmark Interface vs Direct Concrete Type
-
-_This benchmark shows the performance difference between using the interface and the direct concrete type for each strategy. Only for reference, may different in realworld use case. Choose your self._
-
-```sh
-goos: windows
-goarch: amd64
-pkg: github.com/raditzlawliet/blackbox
-cpu: 12th Gen Intel(R) Core(TM) i7-12700H
-BenchmarkLIFOPut-20              	10000000	         9.007 ns/op	      49 B/op	       0 allocs/op
-BenchmarkLIFOGet-20              	10000000	         1.727 ns/op	       0 B/op	       0 allocs/op
-BenchmarkConcreteLIFOPut-20      	10000000	         5.923 ns/op	      49 B/op	       0 allocs/op
-BenchmarkConcreteLIFOGet-20      	10000000	         0.2586 ns/op	       0 B/op	       0 allocs/op
-BenchmarkFIFOPut-20              	10000000	         8.294 ns/op	      26 B/op	       0 allocs/op
-BenchmarkFIFOGet-20              	10000000	         1.266 ns/op	       0 B/op	       0 allocs/op
-BenchmarkConcreteFIFOPut-20      	10000000	         8.216 ns/op	      26 B/op	       0 allocs/op
-BenchmarkConcreteFIFOGet-20      	10000000	         0.8256 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRandomPut-20            	10000000	         6.864 ns/op	      49 B/op	       0 allocs/op
-BenchmarkRandomGet-20            	10000000	         1.600 ns/op	       0 B/op	       0 allocs/op
-BenchmarkConcreteRandomPut-20    	10000000	         5.747 ns/op	      49 B/op	       0 allocs/op
-BenchmarkConcreteRandomGet-20    	10000000	         0.8947 ns/op	       0 B/op	       0 allocs/op
-```
-
-## Philosophy
-
-Sometimes you need predictability. Sometimes you need chaos. BlackBox gives you both, wrapped in a type-safe, efficient package. Put something in. See what comes out. Enjoy the mystery!
+- FIFO uses a ring buffer for efficient Put/Get operations.
+- LIFO uses append/slice operations.
+- Random uses swap-with-last removal to keep operations efficient.
+- For single-threaded hot paths, prefer the concrete constructors (`NewFIFO`, `NewLIFO`, `NewRandom`) when possible.
 
 ## Contributing
 
