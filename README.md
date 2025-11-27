@@ -3,6 +3,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/raditzlawliet/blackbox.svg)](https://pkg.go.dev/github.com/raditzlawliet/blackbox)
 [![codecov](https://codecov.io/gh/raditzlawliet/blackbox/graph/badge.svg?token=VJH1C5BFLN)](https://codecov.io/gh/raditzlawliet/blackbox)
 [![Go Report Card](https://goreportcard.com/badge/github.com/raditzlawliet/blackbox)](https://goreportcard.com/report/github.com/raditzlawliet/blackbox)
+![GitHub License](https://img.shields.io/github/license/raditzlawliet/blackbox)
 
 A generic Go library that creates a literal "black box" - throw anything in, and see what comes out! Perfect for when you need unpredictability, or just want to manage collections with different retrieval strategies.
 
