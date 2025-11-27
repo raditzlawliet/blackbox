@@ -33,14 +33,6 @@ func (b *fifoBox[T]) grow() {
 		newCapacity = b.maxSize
 	}
 
-	if newCapacity < b.size {
-		newCapacity = b.size
-	}
-
-	if newCapacity <= 0 {
-		newCapacity = 1
-	}
-
 	newItems := make([]T, newCapacity)
 
 	if b.size > 0 {

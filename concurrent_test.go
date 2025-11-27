@@ -46,7 +46,7 @@ func TestConcurrentWrapperNoDataLoss(t *testing.T) {
 		}()
 	}
 
-	// consumers: keep consuming until we've observed `total` items
+	// consumers
 	var consumed int64
 	consumers := 6
 	cwg.Add(consumers)
@@ -183,6 +183,69 @@ func TestConcurrentWrapper_StrategiesBasic(t *testing.T) {
 	}
 }
 
+func TestConcurrentWrapper_AccessorsAndClean(t *testing.T) {
+	fifo := NewFIFO[int](3, 3)
+	box := NewConcurrent[int](fifo)
+
+	// Initially empty
+	if !box.IsEmpty() {
+		t.Fatalf("expected empty box")
+	}
+	if got := box.Size(); got != 0 {
+		t.Fatalf("expected size 0, got %d", got)
+	}
+	if got := box.MaxSize(); got != 3 {
+		t.Fatalf("expected max size 3, got %d", got)
+	}
+
+	if _, err := box.Peek(); err != ErrEmptyBlackBox {
+		t.Fatalf("expected ErrEmptyBlackBox on Peek, got %v", err)
+	}
+
+	for i := 0; i < 3; i++ {
+		if err := box.Put(i); err != nil {
+			t.Fatalf("Put returned unexpected error: %v", err)
+		}
+	}
+
+	if !box.IsFull() {
+		t.Fatalf("expected box to be full")
+	}
+	if got := box.Size(); got != 3 {
+		t.Fatalf("expected size 3, got %d", got)
+	}
+
+	v, err := box.Peek()
+	if err != nil {
+		t.Fatalf("Peek returned unexpected error: %v", err)
+	}
+	if v != 0 {
+		t.Fatalf("Peek returned %v, want 0", v)
+	}
+	if got := box.Size(); got != 3 {
+		t.Fatalf("Peek should not remove item; size expected 3, got %d", got)
+	}
+
+	if err := box.Put(99); err != ErrBlackBoxFull {
+		t.Fatalf("expected ErrBlackBoxFull on Put, got %v", err)
+	}
+
+	box.Clean()
+	if !box.IsEmpty() {
+		t.Fatalf("expected empty after Clean")
+	}
+	if got := box.Size(); got != 0 {
+		t.Fatalf("expected size 0 after Clean, got %d", got)
+	}
+	if _, err := box.Get(); err != ErrEmptyBlackBox {
+		t.Fatalf("expected ErrEmptyBlackBox after Clean on Get, got %v", err)
+	}
+
+	if got := box.MaxSize(); got != 3 {
+		t.Fatalf("expected max size to remain 3 after Clean, got %d", got)
+	}
+}
+
 func benchmarkConcurrentPut(b *testing.B, box BlackBox[int]) {
 	cb := NewConcurrent(box)
 	b.ResetTimer()
@@ -196,7 +259,6 @@ func benchmarkConcurrentPut(b *testing.B, box BlackBox[int]) {
 func benchmarkConcurrentGet(b *testing.B, box BlackBox[int]) {
 	cb := NewConcurrent(box)
 
-	// Pre-fill with b.N items
 	for i := range b.N {
 		_ = cb.Put(i)
 	}
