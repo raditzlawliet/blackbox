@@ -26,11 +26,11 @@ func main() {
 
 	// Start producers.
 	wgProducers.Add(producers)
-	for p := range producers {
+	for p := 0; p < producers; p++ {
 		id := p + 1
 		go func(pid int) {
 			defer wgProducers.Done()
-			for i := range itemsPerProducer {
+			for i := 0; i < itemsPerProducer; i++ {
 				item := pid*100 + i // produce a distinguishable item
 				if err := cbox.Put(item); err != nil {
 					// Should not happen here since maxSize is 0 (unlimited)
@@ -47,7 +47,7 @@ func main() {
 	// Start consumers.
 	totalItems := producers * itemsPerProducer
 	wgConsumers.Add(consumers)
-	for c := range consumers {
+	for c := 0; c < consumers; c++ {
 		id := c + 1
 		go func(cid int) {
 			defer wgConsumers.Done()

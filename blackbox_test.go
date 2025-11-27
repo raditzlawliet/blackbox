@@ -92,7 +92,7 @@ func TestRandomStrategy(t *testing.T) {
 
 	// Test Random retrieval (just verify all items are retrieved)
 	retrieved := make(map[int]bool)
-	for range 5 {
+	for i := 0; i < 5; i++ {
 		item, err := box.Get()
 		if err != nil {
 			t.Fatalf("Failed to get item: %v", err)
@@ -310,7 +310,7 @@ func TestPeek(t *testing.T) {
 		}
 
 		// Get all items
-		for range 3 {
+		for i := 0; i < 3; i++ {
 			box.Get()
 		}
 

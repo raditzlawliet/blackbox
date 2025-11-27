@@ -7,7 +7,7 @@ import (
 
 func TestFIFOGrowWithZero(t *testing.T) {
 	b := NewFIFO[int](0, 0)
-	for i := range 8 {
+	for i := 0; i < 8; i++ {
 		b.Put(i)
 	}
 	if b.Size() != 8 {
@@ -18,7 +18,7 @@ func TestFIFOGrowWithZero(t *testing.T) {
 func TestFIFOGrowCopiesContiguousRangeWhenHeadLessThanTail(t *testing.T) {
 	// Create a fifo with capacity 8 and populate it with distinct values.
 	b := NewFIFO[int](0, 8)
-	for i := range 8 {
+	for i := 0; i < 8; i++ {
 		b.items[i] = i
 	}
 
@@ -57,7 +57,7 @@ func TestFIFOGrowRespectsMaxSizeAndCopiesWrapAround(t *testing.T) {
 	// Create a fifo with initial capacity 8 and a maxSize that will limit growth.
 	max := 5
 	b := NewFIFO[int](max, 8)
-	for i := range 8 {
+	for i := 0; i < 8; i++ {
 		b.items[i] = i
 	}
 
