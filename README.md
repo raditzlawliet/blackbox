@@ -94,9 +94,9 @@ _ = box.Put("third")
 
 ## Configuration Options
 
-- WithMaxSize(int): set logical maximum number of items (0 = unlimited)
-- WithInitialCapacity(int): pre-allocate underlying storage to avoid early reallocations
-- WithSeed(int64): seed the RNG for the Random strategy (reproducible behavior)
+- `WithMaxSize(int)`: set logical maximum number of items (0 = unlimited)
+- `WithInitialCapacity(int)`: pre-allocate underlying storage to avoid early reallocations
+- `WithSeed(int64)`: seed the RNG for the Random strategy (reproducible behavior)
 
 ## API Reference
 
@@ -112,9 +112,9 @@ Methods common to all boxes:
 
 Concrete constructors available for performance-sensitive use:
 
-- `NewFIFO[T](maxSize, capacity int) *fifoBox[T]`
-- `NewLIFO[T](maxSize, capacity int) *lifoBox[T]`
-- `NewRandom[T](maxSize, capacity int, rng *rand.Rand) *randomBox[T]`
+- `NewFIFO[T] (maxSize, capacity int) *fifoBox[T]`
+- `NewLIFO[T] (maxSize, capacity int) *lifoBox[T]`
+- `NewRandom[T] (maxSize, capacity int, rng *rand.Rand) *randomBox[T]`
 
 Use the generic `New[T](opts...) BlackBox[T]` factory for convenience and option-based configuration.
 
@@ -164,17 +164,17 @@ func main() {
 
 Notes:
 
-- See `examples/concurrent` for a small runnable demo that shows producers and consumers using `NewConcurrent`.
+- See [`examples/concurrent`](example/concurrent/main.go) for a small runnable demo that shows producers and consumers using `NewConcurrent`.
 - The concurrent wrapper serializes operations with a single `sync.Mutex`.
 
 ## Examples
 
-- `examples/basic` — basic usage for Random / LIFO / FIFO
-- `examples/concurrent` — simple concurrent usage demonstrating `NewConcurrent`
-- `examples/task_queue` — FIFO task queue
-- `examples/lucky_draw` — Random strategy example
-- `examples/undo_stack` — LIFO undo/redo sample
-- `examples/concrete_types` — direct constructor usage (concrete types)
+- [`examples/basic`](example/basic/main.go) — basic usage for Random / LIFO / FIFO
+- [`examples/concurrent`](example/concurrent/main.go) — simple concurrent usage demonstrating `NewConcurrent`
+- [`examples/task_queue`](example/task_queue/main.go) — FIFO task queue
+- [`examples/lucky_draw`](example/lucky_draw/main.go) — Random strategy example
+- [`examples/undo_stack`](example/undo_stack/main.go) — LIFO undo/redo sample
+- [`examples/concrete_types`](example/concrete_types/main.go) — direct constructor usage (concrete types)
 
 ## Performance
 
