@@ -165,17 +165,17 @@ func main() {
 
 Notes:
 
-- See [`examples/concurrent`](example/concurrent/main.go) for a small runnable demo that shows producers and consumers using `NewConcurrent`.
+- See [`examples/concurrent`](examples/concurrent/main.go) for a small runnable demo that shows producers and consumers using `NewConcurrent`.
 - The concurrent wrapper serializes operations with a single `sync.Mutex`.
 
 ## Examples
 
-- [`examples/basic`](example/basic/main.go) — basic usage for Random / LIFO / FIFO
-- [`examples/concurrent`](example/concurrent/main.go) — simple concurrent usage demonstrating `NewConcurrent`
-- [`examples/task_queue`](example/task_queue/main.go) — FIFO task queue
-- [`examples/lucky_draw`](example/lucky_draw/main.go) — Random strategy example
-- [`examples/undo_stack`](example/undo_stack/main.go) — LIFO undo/redo sample
-- [`examples/concrete_types`](example/concrete_types/main.go) — direct constructor usage (concrete types)
+- [`examples/basic`](examples/basic/main.go) — basic usage for Random / LIFO / FIFO
+- [`examples/concurrent`](examples/concurrent/main.go) — simple concurrent usage demonstrating `NewConcurrent`
+- [`examples/task_queue`](examples/task_queue/main.go) — FIFO task queue
+- [`examples/lucky_draw`](examples/lucky_draw/main.go) — Random strategy example
+- [`examples/undo_stack`](examples/undo_stack/main.go) — LIFO undo/redo sample
+- [`examples/concrete_types`](examples/concrete_types/main.go) — direct constructor usage (concrete types)
 
 ## Performance
 
