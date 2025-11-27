@@ -1,7 +1,6 @@
 package blackbox
 
 import (
-	"slices"
 	"testing"
 )
 
@@ -99,7 +98,7 @@ func TestFIFOGrowRespectsMaxSizeAndCopiesWrapAround(t *testing.T) {
 	// original sequence (from head=6, tail=3): [6,7,0,1,2]
 	want := []int{6, 7, 0, 1, 2}
 	got := b.items[:b.size]
-	if !slices.Equal(got, want) {
+	if !EqualInts(got, want) {
 		t.Fatalf("wrapped copy mismatch: want %v got %v", want, got)
 	}
 }
