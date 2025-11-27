@@ -1,9 +1,8 @@
 package blackbox
 
 import (
-	"math/rand"
+	"slices"
 	"testing"
-	"time"
 )
 
 func TestFIFOStrategy(t *testing.T) {
@@ -35,6 +34,10 @@ func TestFIFOStrategy(t *testing.T) {
 	if !box.IsEmpty() {
 		t.Error("Box should be empty")
 	}
+
+	if _, err := box.Get(); err != ErrEmptyBlackBox {
+		t.Error("Should be error Box is empty")
+	}
 }
 
 func TestLIFOStrategy(t *testing.T) {
@@ -65,6 +68,10 @@ func TestLIFOStrategy(t *testing.T) {
 
 	if !box.IsEmpty() {
 		t.Error("Box should be empty")
+	}
+
+	if _, err := box.Get(); err != ErrEmptyBlackBox {
+		t.Error("Should be error Box is empty")
 	}
 }
 
@@ -103,6 +110,85 @@ func TestRandomStrategy(t *testing.T) {
 	if !box.IsEmpty() {
 		t.Error("Box should be empty")
 	}
+
+	if _, err := box.Get(); err != ErrEmptyBlackBox {
+		t.Error("Should be error Box is empty")
+	}
+}
+
+func TestRandomStrategyWithSeed(t *testing.T) {
+	seed := int64(42)
+
+	box1 := New[int](
+		WithStrategy(StrategyRandom),
+		WithSeed(seed),
+	)
+	box2 := New[int](
+		WithStrategy(StrategyRandom),
+		WithSeed(seed),
+	)
+
+	// Test Put for both boxes
+	for i := 1; i <= 5; i++ {
+		if err := box1.Put(i); err != nil {
+			t.Fatalf("Failed to put item %d into box1: %v", i, err)
+		}
+		if err := box2.Put(i); err != nil {
+			t.Fatalf("Failed to put item %d into box2: %v", i, err)
+		}
+	}
+
+	// Retrieve sequences from both boxes and ensure they are identical
+	seq1 := make([]int, 0, 5)
+	seq2 := make([]int, 0, 5)
+	for i := 0; i < 5; i++ {
+		a, err := box1.Get()
+		if err != nil {
+			t.Fatalf("Failed to get item from box1: %v", err)
+		}
+		b, err := box2.Get()
+		if err != nil {
+			t.Fatalf("Failed to get item from box2: %v", err)
+		}
+		seq1 = append(seq1, a)
+		seq2 = append(seq2, b)
+	}
+
+	for i := 0; i < 5; i++ {
+		if seq1[i] != seq2[i] {
+			t.Fatalf("Expected sequences to be identical for same seed, but differ at index %d: %d vs %d", i, seq1[i], seq2[i])
+		}
+	}
+
+	// With a different seed, expect (with high probability) a different sequence
+	box3 := New[int](
+		WithStrategy(StrategyRandom),
+		WithSeed(7),
+	)
+	for i := 1; i <= 5; i++ {
+		if err := box3.Put(i); err != nil {
+			t.Fatalf("Failed to put item %d into box3: %v", i, err)
+		}
+	}
+	seq3 := make([]int, 0, 5)
+	for i := 0; i < 5; i++ {
+		v, err := box3.Get()
+		if err != nil {
+			t.Fatalf("Failed to get item from box3: %v", err)
+		}
+		seq3 = append(seq3, v)
+	}
+
+	same := true
+	for i := 0; i < 5; i++ {
+		if seq1[i] != seq3[i] {
+			same = false
+			break
+		}
+	}
+	if same {
+		t.Error("Expected different sequence for a different seed, but sequences were identical (very unlikely)")
+	}
 }
 
 func TestFIFOWithGrowth(t *testing.T) {
@@ -137,191 +223,105 @@ func TestFIFOWithGrowth(t *testing.T) {
 }
 
 func TestMaxSize(t *testing.T) {
-	box := New[int](
-		WithStrategy(StrategyLIFO),
-		WithMaxSize(3),
-	)
+	strategies := []Strategy{StrategyFIFO, StrategyLIFO, StrategyRandom}
+	for _, strategy := range strategies {
+		box := New[int](
+			WithStrategy(strategy),
+			WithMaxSize(3),
+		)
 
-	// Add up to max size
-	for i := 1; i <= 3; i++ {
-		err := box.Put(i)
-		if err != nil {
-			t.Fatalf("Failed to put item %d: %v", i, err)
+		// Add up to max size
+		for i := 1; i <= 3; i++ {
+			err := box.Put(i)
+			if err != nil {
+				t.Fatalf("Failed to put item %d: %v", i, err)
+			}
 		}
-	}
 
-	// Try to add beyond max size
-	err := box.Put(4)
-	if err != ErrBlackBoxFull {
-		t.Errorf("Expected ErrBlackBoxFull, got %v", err)
-	}
+		// Try to add beyond max size
+		err := box.Put(4)
+		if err != ErrBlackBoxFull {
+			t.Errorf("Expected ErrBlackBoxFull, got %v", err)
+		}
 
-	if !box.IsFull() {
-		t.Error("Box should be full")
+		if !box.IsFull() {
+			t.Error("Box should be full")
+		}
+
+		if box.MaxSize() != 3 {
+			t.Errorf("Expected max size 3, got %d", box.MaxSize())
+		}
 	}
 }
 
 func TestClean(t *testing.T) {
-	box := New[int](WithStrategy(StrategyLIFO))
+	strategies := []Strategy{StrategyFIFO, StrategyLIFO, StrategyRandom}
+	for _, strategy := range strategies {
+		box := New[int](WithStrategy(strategy))
 
-	for i := 1; i <= 5; i++ {
-		box.Put(i)
-	}
+		for i := 1; i <= 5; i++ {
+			box.Put(i)
+		}
 
-	box.Clean()
+		box.Clean()
 
-	if !box.IsEmpty() {
-		t.Error("Box should be empty after Clean()")
-	}
+		if !box.IsEmpty() {
+			t.Error("Box should be empty after Clean()")
+		}
 
-	if box.Size() != 0 {
-		t.Errorf("Expected size 0, got %d", box.Size())
+		if box.Size() != 0 {
+			t.Errorf("Expected size 0, got %d", box.Size())
+		}
 	}
 }
 
 func TestPeek(t *testing.T) {
-	box := New[int](WithStrategy(StrategyLIFO))
+	strategies := []Strategy{StrategyFIFO, StrategyLIFO, StrategyRandom}
+	for _, strategy := range strategies {
+		box := New[int](WithStrategy(strategy))
 
-	box.Put(1)
-	box.Put(2)
-	box.Put(3)
+		box.Put(1)
+		box.Put(2)
+		box.Put(3)
 
-	// Peek should return last item without removing
-	item, err := box.Peek()
-	if err != nil {
-		t.Fatalf("Failed to peek: %v", err)
-	}
-	if item != 3 {
-		t.Errorf("Expected peek to return 3, got %d", item)
-	}
+		// Peek should return last item without removing
+		item, err := box.Peek()
+		if err != nil {
+			t.Fatalf("Failed to peek: %v", err)
+		}
+		switch strategy {
+		case StrategyFIFO:
+			if item != 1 {
+				t.Errorf("Expected peek to return 1, got %d", item)
+			}
+		case StrategyLIFO:
+			if item != 3 {
+				t.Errorf("Expected peek to return 3, got %d", item)
+			}
+		case StrategyRandom:
+			if !slices.Contains([]int{1, 2, 3}, item) {
+				t.Errorf("Expected peek to return 1 to 3, got %d", item)
+			}
+		}
 
-	// Size should remain unchanged
-	if box.Size() != 3 {
-		t.Errorf("Expected size 3 after peek, got %d", box.Size())
-	}
-}
+		// Size should remain unchanged
+		if box.Size() != 3 {
+			t.Errorf("Expected size 3 after peek, got %d", box.Size())
+		}
 
-func BenchmarkLIFOPut(b *testing.B) {
-	box := New[int](WithStrategy(StrategyLIFO), WithInitialCapacity(b.N))
-	i := 0
-	b.ResetTimer()
-	for b.Loop() {
-		box.Put(i)
-		i++
-	}
-}
+		// Get all items
+		for range 3 {
+			box.Get()
+		}
 
-func BenchmarkLIFOGet(b *testing.B) {
-	box := New[int](WithStrategy(StrategyLIFO), WithInitialCapacity(b.N))
-	for i := 0; i < b.N; i++ {
-		box.Put(i)
-	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_, _ = box.Get()
-	}
-}
+		// Should be error
+		if _, err := box.Peek(); err != ErrEmptyBlackBox {
+			t.Errorf("Expected ErrEmptyBlackBox, got %v", err)
+		}
 
-func BenchmarkConcreteLIFOPut(b *testing.B) {
-	box := NewLIFO[int](0, b.N)
-	i := 0
-	b.ResetTimer()
-	for b.Loop() {
-		box.Put(i)
-		i++
-	}
-}
-
-func BenchmarkConcreteLIFOGet(b *testing.B) {
-	box := NewLIFO[int](0, b.N)
-	for i := 0; i < b.N; i++ {
-		box.Put(i)
-	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_, _ = box.Get()
-	}
-}
-
-func BenchmarkFIFOPut(b *testing.B) {
-	box := New[int](WithStrategy(StrategyFIFO), WithInitialCapacity(b.N))
-	i := 0
-	b.ResetTimer()
-	for b.Loop() {
-		box.Put(i)
-		i++
-	}
-}
-
-func BenchmarkFIFOGet(b *testing.B) {
-	box := New[int](WithStrategy(StrategyFIFO), WithInitialCapacity(b.N))
-	for i := 0; i < b.N; i++ {
-		box.Put(i)
-	}
-	b.ResetTimer()
-	for b.Loop() {
-		_, _ = box.Get()
-	}
-}
-
-func BenchmarkConcreteFIFOPut(b *testing.B) {
-	box := NewFIFO[int](0, b.N)
-	i := 0
-	b.ResetTimer()
-	for b.Loop() {
-		box.Put(i)
-		i++
-	}
-}
-
-func BenchmarkConcreteFIFOGet(b *testing.B) {
-	box := NewFIFO[int](0, b.N)
-	for i := 0; i < b.N; i++ {
-		box.Put(i)
-	}
-	b.ResetTimer()
-	for b.Loop() {
-		_, _ = box.Get()
-	}
-}
-
-func BenchmarkRandomPut(b *testing.B) {
-	box := New[int](WithStrategy(StrategyRandom), WithInitialCapacity(b.N))
-	i := 0
-	b.ResetTimer()
-	for b.Loop() {
-		box.Put(i)
-		i++
-	}
-}
-
-func BenchmarkRandomGet(b *testing.B) {
-	box := New[int](WithStrategy(StrategyRandom), WithInitialCapacity(b.N))
-	for i := 0; i < b.N; i++ {
-		box.Put(i)
-	}
-	b.ResetTimer()
-	for b.Loop() {
-		_, _ = box.Get()
-	}
-}
-
-func BenchmarkConcreteRandomPut(b *testing.B) {
-	box := NewRandom[int](0, b.N, rand.New(rand.NewSource(time.Now().UnixNano())))
-	i := 0
-	b.ResetTimer()
-	for b.Loop() {
-		box.Put(i)
-		i++
-	}
-}
-func BenchmarkConcreteRandomGet(b *testing.B) {
-	box := NewRandom[int](0, b.N, rand.New(rand.NewSource(time.Now().UnixNano())))
-	for i := 0; i < b.N; i++ {
-		box.Put(i)
-	}
-	b.ResetTimer()
-	for b.Loop() {
-		_, _ = box.Get()
+		// Should be empty
+		if box.Size() != 0 {
+			t.Errorf("Expected size 0 after get all and peek, got %d", box.Size())
+		}
 	}
 }
