@@ -5,6 +5,18 @@ import (
 	"testing"
 )
 
+func EqualInts(a, b []int) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 func TestFIFOGrowWithZero(t *testing.T) {
 	b := NewFIFO[int](0, 0)
 	for i := 0; i < 8; i++ {
@@ -48,7 +60,7 @@ func TestFIFOGrowCopiesContiguousRangeWhenHeadLessThanTail(t *testing.T) {
 	// Verify the items were copied in order from b.items[1:5].
 	want := []int{1, 2, 3, 4}
 	got := b.items[:b.size]
-	if !slices.Equal(got, want) {
+	if !EqualInts(got, want) {
 		t.Fatalf("items mismatch: want %v got %v", want, got)
 	}
 }
