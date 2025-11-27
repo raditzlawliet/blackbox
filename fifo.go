@@ -21,19 +21,29 @@ func NewFIFO[T any](maxSize, capacity int) *fifoBox[T] {
 }
 
 func (b *fifoBox[T]) grow() {
-	newCapacity := len(b.items) * growthFactor
+	// Initialize newCapacity
+	var newCapacity int
+	if len(b.items) == 0 {
+		newCapacity = defaultInitialCapacity
+	} else {
+		newCapacity = len(b.items) * growthFactor
+	}
+
 	if b.maxSize > 0 && newCapacity > b.maxSize {
 		newCapacity = b.maxSize
 	}
 
 	newItems := make([]T, newCapacity)
 
-	if b.head < b.tail {
-		copy(newItems, b.items[b.head:b.tail])
-	} else {
-		n := copy(newItems, b.items[b.head:])
-		copy(newItems[n:], b.items[:b.tail])
+	if b.size > 0 {
+		if b.head < b.tail {
+			copy(newItems, b.items[b.head:b.tail])
+		} else {
+			n := copy(newItems, b.items[b.head:])
+			copy(newItems[n:], b.items[:b.tail])
+		}
 	}
+
 	b.head = 0
 	b.tail = b.size
 	b.items = newItems

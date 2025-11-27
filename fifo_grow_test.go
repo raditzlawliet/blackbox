@@ -5,7 +5,17 @@ import (
 	"testing"
 )
 
-func TestGrowCopiesContiguousRangeWhenHeadLessThanTail(t *testing.T) {
+func TestFIFOGrowWithZero(t *testing.T) {
+	b := NewFIFO[int](0, 0)
+	for i := range 8 {
+		b.Put(i)
+	}
+	if b.Size() != 8 {
+		t.Fatalf("expected to be 8, got %d", b.Size())
+	}
+}
+
+func TestFIFOGrowCopiesContiguousRangeWhenHeadLessThanTail(t *testing.T) {
 	// Create a fifo with capacity 8 and populate it with distinct values.
 	b := NewFIFO[int](0, 8)
 	for i := range 8 {
@@ -43,7 +53,7 @@ func TestGrowCopiesContiguousRangeWhenHeadLessThanTail(t *testing.T) {
 	}
 }
 
-func TestGrowRespectsMaxSizeAndCopiesWrapAround(t *testing.T) {
+func TestFIFOGrowRespectsMaxSizeAndCopiesWrapAround(t *testing.T) {
 	// Create a fifo with initial capacity 8 and a maxSize that will limit growth.
 	max := 5
 	b := NewFIFO[int](max, 8)
