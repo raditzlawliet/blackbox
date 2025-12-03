@@ -37,9 +37,9 @@ func NewFIFOFrom[T any](items []T, maxSize int) *fifoBox[T] {
 	}
 }
 
-// NewFIFOFromBox creates a new FIFO blackbox from a blackbox.
+// NewFIFOFromBlackBox creates a new FIFO blackbox from a blackbox.
 // items are copied so it safe to use the original blackbox after the blackbox is created.
-func NewFIFOFromBox[T any](box BlackBox[T], maxSize int) *fifoBox[T] {
+func NewFIFOFromBlackBox[T any](box BlackBox[T], maxSize int) *fifoBox[T] {
 	if maxSize > 0 && maxSize < box.Size() {
 		maxSize = box.Size()
 	}

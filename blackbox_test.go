@@ -233,7 +233,7 @@ func TestRandomStrategyWithSeed(t *testing.T) {
 		originalItemsBox3,
 		WithStrategy(StrategyRandom),
 	)
-	box5 := NewFromBox[int](
+	box5 := NewFromBlackBox[int](
 		box5shadow,
 		WithStrategy(StrategyRandom),
 		WithSeed(7),
@@ -513,7 +513,7 @@ func TestNewFrom(t *testing.T) {
 		}
 
 		// MaxSize() will be set, because MaxSize() > Size()
-		box2 := NewFromBox[int](box, WithStrategy(strategy), WithMaxSize(20))
+		box2 := NewFromBlackBox[int](box, WithStrategy(strategy), WithMaxSize(20))
 		if box2.Size() != 3 {
 			t.Errorf("Expected size is 3, got %d", box2.Size())
 		}
@@ -522,7 +522,7 @@ func TestNewFrom(t *testing.T) {
 		}
 
 		// set MaxSize will be ignore because MaxSize() < Size()
-		box3 := NewFromBox[int](box2, WithStrategy(strategy), WithMaxSize(1))
+		box3 := NewFromBlackBox[int](box2, WithStrategy(strategy), WithMaxSize(1))
 		if box3.Size() != 3 {
 			t.Errorf("Expected size is 3, got %d", box3.Size())
 		}
@@ -540,7 +540,7 @@ func TestNewFrom(t *testing.T) {
 		}
 
 		// inheritance MaxSize from previous box
-		box5 := NewFromBox[int](box4, WithStrategy(strategy))
+		box5 := NewFromBlackBox[int](box4, WithStrategy(strategy))
 		if box5.Size() != 3 {
 			t.Errorf("Expected size is 3, got %d", box5.Size())
 		}
@@ -549,6 +549,7 @@ func TestNewFrom(t *testing.T) {
 		}
 	}
 }
+
 func TestNewFromConcrete(t *testing.T) {
 	someItems := []int{1, 2, 3}
 	lifoBox := NewLIFOFrom[int](someItems, 1)
@@ -584,7 +585,7 @@ func TestNewFromConcrete(t *testing.T) {
 	// lifoBox should be 1, 2
 	// fifoBox should be 2, 3
 	// randomBox should be between 1, 2, 3 but only contains 2 items
-	newFifoBox := NewFIFOFromBox[int](lifoBox, 1)
+	newFifoBox := NewFIFOFromBlackBox[int](lifoBox, 1)
 	newFifoItem, _ := newFifoBox.Get()
 	if newFifoItem != 1 {
 		t.Errorf("Expected newFifoItem is 1, got %d", newFifoItem)
@@ -596,7 +597,7 @@ func TestNewFromConcrete(t *testing.T) {
 		t.Errorf("Expected lifoBox should be 2, got %d", lifoBox.Size())
 	}
 
-	newLifoBox := NewLIFOFromBox[int](fifoBox, 1)
+	newLifoBox := NewLIFOFromBlackBox[int](fifoBox, 1)
 	newLifoItem, _ := newLifoBox.Get()
 	if newLifoItem != 3 {
 		t.Errorf("Expected newLifoItem is 3, got %d", newLifoItem)
@@ -608,7 +609,7 @@ func TestNewFromConcrete(t *testing.T) {
 		t.Errorf("Expected fifoBox should be 2, got %d", fifoBox.Size())
 	}
 
-	newRandomBox := NewRandomFromBox[int](fifoBox, 1, rand.New(rand.NewSource(time.Now().UnixNano())))
+	newRandomBox := NewRandomFromBlackBox[int](fifoBox, 1, rand.New(rand.NewSource(time.Now().UnixNano())))
 	newRandomItem, _ := newRandomBox.Get()
 	if !ContainsInt([]int{2, 3}, newRandomItem) {
 		t.Errorf("Expected newRandomItem either 2 or 3, got %d", newRandomItem)

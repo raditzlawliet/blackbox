@@ -185,11 +185,11 @@ func NewFrom[T any](data []T, opts ...Option) BlackBox[T] {
 	}
 }
 
-// NewFromBox creates a new BlackBox with existing data and the specified options
+// NewFromBlackBox creates a new BlackBox with existing data and the specified options
 // items are copied so it safe to use the original slice after the blackbox is created.
 // InitialCapacity will use items length.
 // MaxSize always has minimum box.MaxSize() or 0.
-func NewFromBox[T any](box BlackBox[T], opts ...Option) BlackBox[T] {
+func NewFromBlackBox[T any](box BlackBox[T], opts ...Option) BlackBox[T] {
 	cfg := parseOptions(opts)
 	if cfg.useMaxSize {
 		if cfg.maxSize > 0 && cfg.maxSize < box.Size() {
@@ -200,9 +200,9 @@ func NewFromBox[T any](box BlackBox[T], opts ...Option) BlackBox[T] {
 	}
 	switch cfg.strategy {
 	case StrategyFIFO:
-		return NewFIFOFromBox[T](box, cfg.maxSize)
+		return NewFIFOFromBlackBox[T](box, cfg.maxSize)
 	case StrategyLIFO:
-		return NewLIFOFromBox[T](box, cfg.maxSize)
+		return NewLIFOFromBlackBox[T](box, cfg.maxSize)
 	case StrategyRandom:
 		fallthrough
 	default:
@@ -212,6 +212,6 @@ func NewFromBox[T any](box BlackBox[T], opts ...Option) BlackBox[T] {
 		} else {
 			rng = rand.New(rand.NewSource(time.Now().UnixNano()))
 		}
-		return NewRandomFromBox[T](box, cfg.maxSize, rng)
+		return NewRandomFromBlackBox[T](box, cfg.maxSize, rng)
 	}
 }

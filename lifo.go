@@ -28,9 +28,9 @@ func NewLIFOFrom[T any](items []T, maxSize int) *lifoBox[T] {
 	}
 }
 
-// NewLIFOFromBox creates a new LIFO blackbox from a blackbox with the specified maximum size.
+// NewLIFOFromBlackBox creates a new LIFO blackbox from a blackbox with the specified maximum size.
 // items are copied so it safe to use the original blackbox after the blackbox is created.
-func NewLIFOFromBox[T any](box BlackBox[T], maxSize int) *lifoBox[T] {
+func NewLIFOFromBlackBox[T any](box BlackBox[T], maxSize int) *lifoBox[T] {
 	if maxSize > 0 && maxSize < box.Size() {
 		maxSize = box.Size()
 	}

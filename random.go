@@ -35,9 +35,9 @@ func NewRandomFrom[T any](items []T, maxSize int, rng *rand.Rand) *randomBox[T] 
 	}
 }
 
-// NewRandomFromBox creates a new Random blackbox from a BlackBox[T] and the specified maximum size.
+// NewRandomFromBlackBox creates a new Random blackbox from a BlackBox[T] and the specified maximum size.
 // items are copied so it safe to use the original blackbox after the blackbox is created.
-func NewRandomFromBox[T any](box BlackBox[T], maxSize int, rng *rand.Rand) *randomBox[T] {
+func NewRandomFromBlackBox[T any](box BlackBox[T], maxSize int, rng *rand.Rand) *randomBox[T] {
 	if maxSize > 0 && maxSize < box.Size() {
 		maxSize = box.Size()
 	}
