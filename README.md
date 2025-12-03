@@ -95,11 +95,18 @@ _ = box.Put("second")
 _ = box.Put("third")
 ```
 
+## Creation Factory
+
+- `New[T] (...Option) BlackBox[T]`: create a new box with the given options
+- `NewFrom[T] ([]T, ...Option) BlackBox[T]`: create a new box with the given slices and options
+- `NewFromBlackBox[T] (BlackBox[T], ...Option) BlackBox[T]`: create a new box with the given blackbox and options
+
 ## Configuration Options
 
+- `WithStrategy(strategy)`: set strategy
 - `WithMaxSize(int)`: set logical maximum number of items (0 = unlimited)
 - `WithInitialCapacity(int)`: pre-allocate underlying storage to avoid early reallocations
-- `WithSeed(int64)`: seed the RNG for the Random strategy (reproducible behavior)
+- `WithSeed(int64)`: [Strategy.StrategyRandom] seed the RNG for the Random strategy (reproducible behavior)
 
 ## API Reference
 
@@ -112,6 +119,7 @@ Methods common to all boxes:
 - `MaxSize() int` — configured maximum size (0 = unlimited). You can't have zero-max-size box, for what?
 - `IsFull() bool`, `IsEmpty() bool`
 - `Clean()` — remove all items
+- `Items() []T` — return slice copy all items in the box
 
 Concrete constructors available for performance-sensitive use:
 
@@ -119,7 +127,15 @@ Concrete constructors available for performance-sensitive use:
 - `NewLIFO[T] (maxSize, capacity int) *lifoBox[T]`
 - `NewRandom[T] (maxSize, capacity int, rng *rand.Rand) *randomBox[T]`
 
-Use the generic `New[T](opts...) BlackBox[T]` factory for convenience and option-based configuration.
+- `NewFIFOFrom[T] (data, maxSize int) *fifoBox[T]`
+- `NewLIFOFrom[T] (data, maxSize int) *lifoBox[T]`
+- `NewRandomFrom[T] (data, maxSize int, rng *rand.Rand) *randomBox[T]`
+
+- `NewFIFOFromBlackBox[T] (box, maxSize int) *fifoBox[T]`
+- `NewLIFOFromBlackBox[T] (box, maxSize int) *lifoBox[T]`
+- `NewRandomFromBlackBox[T] (box, maxSize int, rng *rand.Rand) *randomBox[T]`
+
+Use the generic `New[T]`, `NewFrom[T]` or `NewFromBlackBox[T]` factory for convenience and option-based configuration.
 
 ## Concurrency
 

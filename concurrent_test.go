@@ -244,6 +244,10 @@ func TestConcurrentWrapper_AccessorsAndClean(t *testing.T) {
 	if got := box.MaxSize(); got != 3 {
 		t.Fatalf("expected max size to remain 3 after Clean, got %d", got)
 	}
+
+	if got := box.Items(); len(got) != 0 {
+		t.Fatalf("expected size after Items() to remain 0, got %d", got)
+	}
 }
 
 func benchmarkConcurrentPut(b *testing.B, box BlackBox[int]) {

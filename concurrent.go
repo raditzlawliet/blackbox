@@ -71,5 +71,12 @@ func (c *concurrentBox[T]) Clean() {
 	c.mu.Unlock()
 }
 
+func (c *concurrentBox[T]) Items() []T {
+	c.mu.Lock()
+	items := c.box.Items()
+	c.mu.Unlock()
+	return items
+}
+
 // Compile-time assertion that concurrentBox implements BlackBox[T].
 var _ BlackBox[any] = (*concurrentBox[any])(nil)

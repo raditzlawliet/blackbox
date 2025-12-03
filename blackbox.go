@@ -43,6 +43,8 @@ const (
 //     Return true when Size() == 0.
 //   - Clean()
 //     Remove all items from the blackbox, resetting its size to zero.
+//   - Items() []T
+//     Return a copy of all items in the blackbox.
 //
 // Implementations returned by New[T] honor these semantics but differ in
 // selection behavior (StrategyFIFO, StrategyLIFO, StrategyRandom).
@@ -55,6 +57,7 @@ type BlackBox[T any] interface {
 	IsFull() bool
 	IsEmpty() bool
 	Clean()
+	Items() []T
 }
 
 // Strategy defines how items are retrieved from the blackbox
@@ -73,6 +76,7 @@ type config struct {
 	initialCapacity int
 	seed            int64
 	useSeed         bool
+	useMaxSize      bool
 }
 
 // Option is a function that configures the blackbox
@@ -89,6 +93,7 @@ func WithStrategy(strategy Strategy) Option {
 func WithMaxSize(size int) Option {
 	return func(c *config) {
 		c.maxSize = size
+		c.useMaxSize = true
 	}
 }
 
@@ -151,5 +156,62 @@ func New[T any](opts ...Option) BlackBox[T] {
 			rng = rand.New(rand.NewSource(time.Now().UnixNano()))
 		}
 		return NewRandom[T](cfg.maxSize, cfg.initialCapacity, rng)
+	}
+}
+
+// NewFrom creates a new BlackBox with existing data and the specified options
+// items are copied so it safe to use the original slice after the blackbox is created.
+// InitialCapacity will use items length
+func NewFrom[T any](data []T, opts ...Option) BlackBox[T] {
+	cfg := parseOptions(opts)
+	if cfg.maxSize > 0 && cfg.maxSize < len(data) {
+		cfg.maxSize = len(data)
+	}
+	switch cfg.strategy {
+	case StrategyFIFO:
+		return NewFIFOFrom[T](data, cfg.maxSize)
+	case StrategyLIFO:
+		return NewLIFOFrom[T](data, cfg.maxSize)
+	case StrategyRandom:
+		fallthrough
+	default:
+		var rng *rand.Rand
+		if cfg.useSeed {
+			rng = rand.New(rand.NewSource(cfg.seed))
+		} else {
+			rng = rand.New(rand.NewSource(time.Now().UnixNano()))
+		}
+		return NewRandomFrom[T](data, cfg.maxSize, rng)
+	}
+}
+
+// NewFromBlackBox creates a new BlackBox with existing data and the specified options
+// items are copied so it safe to use the original slice after the blackbox is created.
+// InitialCapacity will use items length.
+// MaxSize always has minimum box.MaxSize() or 0.
+func NewFromBlackBox[T any](box BlackBox[T], opts ...Option) BlackBox[T] {
+	cfg := parseOptions(opts)
+	if cfg.useMaxSize {
+		if cfg.maxSize > 0 && cfg.maxSize < box.Size() {
+			cfg.maxSize = box.Size()
+		}
+	} else {
+		cfg.maxSize = box.MaxSize()
+	}
+	switch cfg.strategy {
+	case StrategyFIFO:
+		return NewFIFOFromBlackBox[T](box, cfg.maxSize)
+	case StrategyLIFO:
+		return NewLIFOFromBlackBox[T](box, cfg.maxSize)
+	case StrategyRandom:
+		fallthrough
+	default:
+		var rng *rand.Rand
+		if cfg.useSeed {
+			rng = rand.New(rand.NewSource(cfg.seed))
+		} else {
+			rng = rand.New(rand.NewSource(time.Now().UnixNano()))
+		}
+		return NewRandomFromBlackBox[T](box, cfg.maxSize, rng)
 	}
 }
