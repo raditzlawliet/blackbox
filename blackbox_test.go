@@ -180,6 +180,8 @@ func TestRandomStrategyWithSeed(t *testing.T) {
 			t.Fatalf("Failed to put item %d into box3: %v", i, err)
 		}
 	}
+
+	originalItemsBox3 := box3.Items() // for box 4
 	seq3 := make([]int, 0, 5)
 	for i := 0; i < 5; i++ {
 		v, err := box3.Get()
@@ -197,6 +199,62 @@ func TestRandomStrategyWithSeed(t *testing.T) {
 		}
 	}
 	if same {
+		t.Error("Expected different sequence for a different seed, but sequences were identical (very unlikely)")
+	}
+
+	// With a different seed, expect (with high probability) a different sequence but using NewFrom
+	box4 := NewFrom[int](
+		originalItemsBox3,
+		WithStrategy(StrategyRandom),
+		WithSeed(7),
+	)
+	seq4 := make([]int, 0, 5)
+	for i := 0; i < 5; i++ {
+		v, err := box4.Get()
+		if err != nil {
+			t.Fatalf("Failed to get item from box4: %v", err)
+		}
+		seq4 = append(seq4, v)
+	}
+
+	same4 := true
+	for i := 0; i < 5; i++ {
+		if seq1[i] != seq4[i] {
+			same4 = false
+			break
+		}
+	}
+	if same4 {
+		t.Error("Expected different sequence for a different seed, but sequences were identical (very unlikely)")
+	}
+
+	// With a different seed, expect (with high probability) a different sequence but using NewFrom
+	box5shadow := NewFrom[int](
+		originalItemsBox3,
+		WithStrategy(StrategyRandom),
+	)
+	box5 := NewFromBox[int](
+		box5shadow,
+		WithStrategy(StrategyRandom),
+		WithSeed(7),
+	)
+	seq5 := make([]int, 0, 5)
+	for i := 0; i < 5; i++ {
+		v, err := box5.Get()
+		if err != nil {
+			t.Fatalf("Failed to get item from box4: %v", err)
+		}
+		seq5 = append(seq5, v)
+	}
+
+	same5 := true
+	for i := 0; i < 5; i++ {
+		if seq1[i] != seq5[i] {
+			same5 = false
+			break
+		}
+	}
+	if same5 {
 		t.Error("Expected different sequence for a different seed, but sequences were identical (very unlikely)")
 	}
 }
@@ -443,6 +501,55 @@ func TestItemsFIFO(t *testing.T) {
 }
 
 func TestNewFrom(t *testing.T) {
+	strategies := []Strategy{StrategyFIFO, StrategyLIFO, StrategyRandom}
+	for _, strategy := range strategies {
+		data := []int{1, 2, 3}
+		box := NewFrom[int](data, WithStrategy(strategy))
+		if box.Size() != 3 {
+			t.Errorf("Expected size is 3, got %d", box.Size())
+		}
+		if box.MaxSize() != 0 {
+			t.Errorf("Expected max size is 0, got %d", box.MaxSize())
+		}
+
+		// MaxSize() will be set, because MaxSize() > Size()
+		box2 := NewFromBox[int](box, WithStrategy(strategy), WithMaxSize(20))
+		if box2.Size() != 3 {
+			t.Errorf("Expected size is 3, got %d", box2.Size())
+		}
+		if box2.MaxSize() != 20 {
+			t.Errorf("Expected max size is 20, got %d", box2.MaxSize())
+		}
+
+		// set MaxSize will be ignore because MaxSize() < Size()
+		box3 := NewFromBox[int](box2, WithStrategy(strategy), WithMaxSize(1))
+		if box3.Size() != 3 {
+			t.Errorf("Expected size is 3, got %d", box3.Size())
+		}
+		if box3.MaxSize() != 3 {
+			t.Errorf("Expected max size is 3, got %d", box3.MaxSize())
+		}
+
+		// set MaxSize will be ignore because MaxSize() < Size()
+		box4 := NewFrom[int](box3.Items(), WithStrategy(strategy), WithMaxSize(1))
+		if box4.Size() != 3 {
+			t.Errorf("Expected size is 3, got %d", box4.Size())
+		}
+		if box4.MaxSize() != 3 {
+			t.Errorf("Expected max size is 3, got %d", box4.MaxSize())
+		}
+
+		// inheritance MaxSize from previous box
+		box5 := NewFromBox[int](box4, WithStrategy(strategy))
+		if box5.Size() != 3 {
+			t.Errorf("Expected size is 3, got %d", box5.Size())
+		}
+		if box5.MaxSize() != 3 {
+			t.Errorf("Expected max size is 3, got %d", box5.MaxSize())
+		}
+	}
+}
+func TestNewFromConcrete(t *testing.T) {
 	someItems := []int{1, 2, 3}
 	lifoBox := NewLIFOFrom[int](someItems, 1)
 	fifoBox := NewFIFOFrom[int](someItems, 1)
@@ -477,7 +584,7 @@ func TestNewFrom(t *testing.T) {
 	// lifoBox should be 1, 2
 	// fifoBox should be 2, 3
 	// randomBox should be between 1, 2, 3 but only contains 2 items
-	newFifoBox := NewFIFOFromBox[int](lifoBox)
+	newFifoBox := NewFIFOFromBox[int](lifoBox, 1)
 	newFifoItem, _ := newFifoBox.Get()
 	if newFifoItem != 1 {
 		t.Errorf("Expected newFifoItem is 1, got %d", newFifoItem)
@@ -489,7 +596,7 @@ func TestNewFrom(t *testing.T) {
 		t.Errorf("Expected lifoBox should be 2, got %d", lifoBox.Size())
 	}
 
-	newLifoBox := NewLIFOFromBox[int](fifoBox)
+	newLifoBox := NewLIFOFromBox[int](fifoBox, 1)
 	newLifoItem, _ := newLifoBox.Get()
 	if newLifoItem != 3 {
 		t.Errorf("Expected newLifoItem is 3, got %d", newLifoItem)
@@ -501,7 +608,7 @@ func TestNewFrom(t *testing.T) {
 		t.Errorf("Expected fifoBox should be 2, got %d", fifoBox.Size())
 	}
 
-	newRandomBox := NewRandomFromBox[int](fifoBox, rand.New(rand.NewSource(time.Now().UnixNano())))
+	newRandomBox := NewRandomFromBox[int](fifoBox, 1, rand.New(rand.NewSource(time.Now().UnixNano())))
 	newRandomItem, _ := newRandomBox.Get()
 	if !ContainsInt([]int{2, 3}, newRandomItem) {
 		t.Errorf("Expected newRandomItem either 2 or 3, got %d", newRandomItem)

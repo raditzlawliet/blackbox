@@ -23,7 +23,7 @@ func NewFIFO[T any](maxSize, capacity int) *fifoBox[T] {
 // NewFIFOFrom creates a new FIFO blackbox from a slice of items and the specified maximum size.
 // items are copied so it safe to use the original slice after the blackbox is created.
 func NewFIFOFrom[T any](items []T, maxSize int) *fifoBox[T] {
-	if maxSize != 0 && maxSize < len(items) {
+	if maxSize > 0 && maxSize < len(items) {
 		maxSize = len(items)
 	}
 	newItems := make([]T, len(items))
@@ -39,13 +39,16 @@ func NewFIFOFrom[T any](items []T, maxSize int) *fifoBox[T] {
 
 // NewFIFOFromBox creates a new FIFO blackbox from a blackbox.
 // items are copied so it safe to use the original blackbox after the blackbox is created.
-func NewFIFOFromBox[T any](box BlackBox[T]) *fifoBox[T] {
+func NewFIFOFromBox[T any](box BlackBox[T], maxSize int) *fifoBox[T] {
+	if maxSize > 0 && maxSize < box.Size() {
+		maxSize = box.Size()
+	}
 	return &fifoBox[T]{
 		items:   box.Items(),
 		head:    0,
 		tail:    box.Size(),
 		size:    box.Size(),
-		maxSize: box.MaxSize(),
+		maxSize: maxSize,
 	}
 }
 

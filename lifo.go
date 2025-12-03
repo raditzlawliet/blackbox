@@ -17,7 +17,7 @@ func NewLIFO[T any](maxSize, capacity int) *lifoBox[T] {
 // NewLIFOFrom creates a new LIFO blackbox from a slice of items with the specified maximum size.
 // items are copied so it safe to use the original slice after the blackbox is created.
 func NewLIFOFrom[T any](items []T, maxSize int) *lifoBox[T] {
-	if maxSize != 0 && maxSize < len(items) {
+	if maxSize > 0 && maxSize < len(items) {
 		maxSize = len(items)
 	}
 	newItems := make([]T, len(items))
@@ -30,10 +30,13 @@ func NewLIFOFrom[T any](items []T, maxSize int) *lifoBox[T] {
 
 // NewLIFOFromBox creates a new LIFO blackbox from a blackbox with the specified maximum size.
 // items are copied so it safe to use the original blackbox after the blackbox is created.
-func NewLIFOFromBox[T any](box BlackBox[T]) *lifoBox[T] {
+func NewLIFOFromBox[T any](box BlackBox[T], maxSize int) *lifoBox[T] {
+	if maxSize > 0 && maxSize < box.Size() {
+		maxSize = box.Size()
+	}
 	return &lifoBox[T]{
 		items:   box.Items(),
-		maxSize: box.MaxSize(),
+		maxSize: maxSize,
 	}
 }
 
