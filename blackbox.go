@@ -43,6 +43,8 @@ const (
 //     Return true when Size() == 0.
 //   - Clean()
 //     Remove all items from the blackbox, resetting its size to zero.
+//   - Items() []T
+//     Return a copy of all items in the blackbox.
 //
 // Implementations returned by New[T] honor these semantics but differ in
 // selection behavior (StrategyFIFO, StrategyLIFO, StrategyRandom).
@@ -55,6 +57,7 @@ type BlackBox[T any] interface {
 	IsFull() bool
 	IsEmpty() bool
 	Clean()
+	Items() []T
 }
 
 // Strategy defines how items are retrieved from the blackbox

@@ -1,7 +1,9 @@
 package blackbox
 
 import (
+	"math/rand"
 	"testing"
+	"time"
 )
 
 func ContainsInt(s []int, v int) bool {
@@ -331,5 +333,183 @@ func TestPeek(t *testing.T) {
 		if box.Size() != 0 {
 			t.Errorf("Expected size 0 after get all and peek, got %d", box.Size())
 		}
+	}
+}
+
+func TestItems(t *testing.T) {
+	strategies := []Strategy{StrategyFIFO, StrategyLIFO, StrategyRandom}
+	for _, strategy := range strategies {
+		box := New[int](WithStrategy(strategy))
+
+		box.Put(1)
+		box.Put(2)
+		box.Put(3)
+		box.Get()
+		box.Get()
+
+		items := box.Items()
+		if len(items) != 1 {
+			t.Errorf("Strategy=%v Expected items length only 1, got %d", strategy, len(items))
+		}
+
+		switch strategy {
+		case StrategyFIFO:
+			if items[0] != 3 {
+				t.Errorf("Expected item is 3, got %d", items[0])
+			}
+		case StrategyLIFO:
+			if items[0] != 1 {
+				t.Errorf("Expected item is 1, got %d", items[0])
+			}
+		case StrategyRandom:
+			if !ContainsInt([]int{1, 2, 3}, items[0]) {
+				t.Errorf("Expected item is 1 to 3, got %d", items[0])
+			}
+		}
+
+		box.Put(4)
+		box.Put(5)
+		box.Put(6)
+		box.Get()
+		box.Get()
+
+		items2 := box.Items()
+		if len(items2) != 2 {
+			t.Errorf("Strategy=%v Expected items length only 2, got %d", strategy, len(items2))
+		}
+
+		switch strategy {
+		case StrategyFIFO:
+			if items[0] != 3 {
+				t.Errorf("Expected item is 3, got %d", items[0])
+			}
+		case StrategyLIFO:
+			if items[0] != 1 {
+				t.Errorf("Expected item is 1, got %d", items[0])
+			}
+		case StrategyRandom:
+			if !ContainsInt([]int{1, 2, 3, 4, 5, 6}, items[0]) {
+				t.Errorf("Expected item is 1 to 6, got %d", items[0])
+			}
+		}
+
+		box.Clean()
+		items3 := box.Items()
+		if len(items3) != 0 {
+			t.Errorf("Strategy=%v Expected items length only 0, got %d", strategy, len(items3))
+		}
+	}
+}
+
+func TestItemsFIFO(t *testing.T) {
+	box := NewFIFO[int](0, defaultInitialCapacity)
+	for i := 0; i < 40; i++ {
+		box.Put(i)
+	}
+	for i := 0; i < 10; i++ {
+		box.Get()
+	}
+	if box.head != 10 {
+		t.Errorf("Expected head is 10, got %d", box.head)
+	}
+	items := box.Items()
+	if len(items) != 30 {
+		t.Errorf("Expected items length only 30, got %d", len(items))
+	}
+
+	// should be head not reset until tail >= head
+	for i := 0; i < 30; i++ {
+		box.Put(i)
+	}
+	if box.head != 10 {
+		t.Errorf("Expected head is 0, got %d", box.head)
+	}
+	items2 := box.Items()
+	if len(items2) != 60 {
+		t.Errorf("Expected items length only 60, got %d", len(items))
+	}
+
+	// should be reset the head
+	for i := 0; i < 10; i++ {
+		box.Put(i)
+	}
+	if box.head != 0 {
+		t.Errorf("Expected head is 0, got %d", box.head)
+	}
+	items3 := box.Items()
+	if len(items3) != 70 {
+		t.Errorf("Expected items length only 70, got %d", len(items))
+	}
+}
+
+func TestNewFrom(t *testing.T) {
+	someItems := []int{1, 2, 3}
+	lifoBox := NewLIFOFrom[int](someItems, 1)
+	fifoBox := NewFIFOFrom[int](someItems, 1)
+	randomBox := NewRandomFrom[int](someItems, 1, rand.New(rand.NewSource(time.Now().UnixNano())))
+
+	lifoItem, _ := lifoBox.Get()
+	fifoItem, _ := fifoBox.Get()
+	randomItem, _ := randomBox.Get()
+
+	if lifoItem != 3 {
+		t.Errorf("Expected lifoItem is 3, got %d", lifoItem)
+	}
+	if fifoItem != 1 {
+		t.Errorf("Expected fifoItem is 1, got %d", fifoItem)
+	}
+	if !ContainsInt([]int{1, 2, 3}, randomItem) {
+		t.Errorf("Expected randomItem is 1 to 3, got %d", randomItem)
+	}
+
+	if lifoBox.Size() != 2 {
+		t.Errorf("Expected items length only 2, got %d", lifoBox.Size())
+	}
+
+	if fifoBox.Size() != 2 {
+		t.Errorf("Expected items length only 2, got %d", fifoBox.Size())
+	}
+
+	if randomBox.Size() != 2 {
+		t.Errorf("Expected items length only 2, got %d", randomBox.Size())
+	}
+
+	// lifoBox should be 1, 2
+	// fifoBox should be 2, 3
+	// randomBox should be between 1, 2, 3 but only contains 2 items
+	newFifoBox := NewFIFOFromBox[int](lifoBox)
+	newFifoItem, _ := newFifoBox.Get()
+	if newFifoItem != 1 {
+		t.Errorf("Expected newFifoItem is 1, got %d", newFifoItem)
+	}
+	if newFifoBox.Size() != 1 {
+		t.Errorf("Expected newFifoBox should be 1, got %d", newFifoBox.Size())
+	}
+	if lifoBox.Size() != 2 {
+		t.Errorf("Expected lifoBox should be 2, got %d", lifoBox.Size())
+	}
+
+	newLifoBox := NewLIFOFromBox[int](fifoBox)
+	newLifoItem, _ := newLifoBox.Get()
+	if newLifoItem != 3 {
+		t.Errorf("Expected newLifoItem is 3, got %d", newLifoItem)
+	}
+	if newLifoBox.Size() != 1 {
+		t.Errorf("Expected newLifoBox should be 1, got %d", newLifoBox.Size())
+	}
+	if fifoBox.Size() != 2 {
+		t.Errorf("Expected fifoBox should be 2, got %d", fifoBox.Size())
+	}
+
+	newRandomBox := NewRandomFromBox[int](fifoBox, rand.New(rand.NewSource(time.Now().UnixNano())))
+	newRandomItem, _ := newRandomBox.Get()
+	if !ContainsInt([]int{2, 3}, newRandomItem) {
+		t.Errorf("Expected newRandomItem either 2 or 3, got %d", newRandomItem)
+	}
+	if newRandomBox.Size() != 1 {
+		t.Errorf("Expected newRandomBox should be 1, got %d", newRandomBox.Size())
+	}
+	if fifoBox.Size() != 2 {
+		t.Errorf("Expected fifoBox should be 2, got %d", fifoBox.Size())
 	}
 }
